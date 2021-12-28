@@ -102,6 +102,10 @@ def manage_record_set(prev_state, cdef, op, domain):
         elif s3_region:
             hosted_zone_id = S3_MAPPING_DICT[s3_region]
             domain_name = f's3-website-{s3_region}.amazonaws.com.'
+        else:
+            eh.add_log("No API, Cloudfront, or S3 Data", {"definition": cdef}, is_error=True)
+            eh.perm_error("No API, Cloudfront, or S3 Data", 0)
+            return 0
         desired_set = remove_none_attributes({
             "Name": domain,
             "Type": record_type,
