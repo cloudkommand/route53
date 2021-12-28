@@ -198,7 +198,8 @@ def check_update_complete():
         except ClientError as e:
             handle_common_errors(e, eh, "Failed to Check Status", 90, ["NoSuchChange", "InvalidInput"])
 
-    eh.add_log("Record(s) Complete", {"response": response})
+    if not eh.error:
+        eh.add_log("Record(s) Complete", {"response": response})
 
 def run_update(params):
     try:
@@ -250,7 +251,7 @@ def get_set(domain):
             )
         print(f"Record Set Response {response}")
         for record_set in response.get("ResourceRecordSets"):
-            if record_set.get("Name") == domain:
+            if record_set.get("Name")[:-1] == domain:
                 found_set = record_set
                 break
     if found_set:
