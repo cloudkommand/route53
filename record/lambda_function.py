@@ -198,6 +198,8 @@ def check_update_complete():
         except ClientError as e:
             handle_common_errors(e, eh, "Failed to Check Status", 90, ["NoSuchChange", "InvalidInput"])
 
+    eh.add_log("Record(s) Complete", {"response": response})
+
 def run_update(params):
     try:
         response = route53.change_resource_record_sets(**params)
@@ -228,6 +230,7 @@ def get_set(domain):
             old_zone = zone
             break
 
+    print(f"old_zone = {old_zone}")
     if not old_zone and hosted_zone_response.get("IsTruncated"):
         marker = hosted_zone_response.get("NextMarker")
         while marker and not old_zone:
@@ -237,14 +240,14 @@ def get_set(domain):
                     old_zone = zone
                     break
             marker = hosted_zone_response.get("NextMarker") if hosted_zone_response.get("IsTruncated") else None
-            
+     
     if old_zone:
 
         response = route53.list_resource_record_sets(
             HostedZoneId=old_zone['Id'],
             StartRecordName=domain
             )
-
+        print(f"Record Set Response {response}")
         for record_set in response.get("ResourceRecordSets"):
             if record_set.get("Name") == domain:
                 found_set = record_set
