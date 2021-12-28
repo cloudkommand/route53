@@ -191,6 +191,7 @@ def check_update_complete():
         try:
             response = route53.get_change(Id=check_id)
             if response.get("ChangeInfo")['Status'] != "INSYNC":
+                eh.add_log("Record Updating", {"id": check_id})
                 eh.retry_error(str(current_epoch_time_usec_num()), progress=90, callback_sec=4)
                 break
             # eh.add_log("Updated Record(s)", {"response": response})
