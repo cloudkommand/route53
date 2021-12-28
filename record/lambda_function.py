@@ -128,6 +128,8 @@ def manage_record_set(prev_state, cdef, op, domain):
             }) or None
         })
 
+        print(f"current_set = {current_set}")
+        print(f"desired_set = {desired_set}")
         if current_set != desired_set:
             upsert_set = desired_set
         else:
@@ -255,6 +257,7 @@ def get_set(domain):
                 found_set = record_set
                 break
     if found_set:
+        found_set['Name'] = found_set['Name'][:-1]
         eh.add_log("Found Matching Record", {"set": found_set, "domain": domain})
     else:
         eh.add_log("No Matching Record", {"domain": domain})
