@@ -1,0 +1,105 @@
+{
+    "components": {
+        "record": {
+            "type": "ext",
+            "displayname": "CK Route53 Record",
+            "description": "Builds and deploys a single-page React application using S3 and (if specified) Route53",
+            "cloud": "AWS",
+            "resources": [
+                "AWS::route53::recordset"
+            ],
+            "policy": {
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Sid": "Vis",
+                    "Effect": "Allow",
+                    "Action": [
+                        "iam:PassRole",
+                        "route53:ChangeResourceRecordSets",
+                        "route53:GetChange",
+                        "route53:ListHostedZones",
+                        "route53:ListResourceRecordSets"
+                    ],
+                    "Resource": "*"
+                }]
+            },
+            "input": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the bucket. If not present auto-generation will be attempted."
+                    },
+                    "s3_bucket": {
+                        "type": "string",
+                        "description": "Whether to enable versioning on the bucket"
+                    },
+                    "base_domain": {
+                        "type": "string",
+                        "description": "If true, puts the full public access block"
+                    },
+                    "public_access_block": {
+                        "type": "object",
+                        "properties": {
+                            "BlockPublicAcls": {"type": "boolean"},
+                            "IgnorePublicAcls": {"type": "boolean"},
+                            "BlockPublicPolicy": {"type": "boolean"},
+                            "RestrictPublicBuckets": {"type": "boolean"}
+                        },
+                        "description": "Set this to configure the public access block on an item-by-item level"
+                    },
+                    "bucket_policy": {
+                        "type": "object",
+                        "description": "An inline IAM policy to attach to the S3 bucket. Your bucket should be in the Resource section of the policy"
+                    },
+                    "CORS": {
+                        "type": ["boolean", "object"],
+                        "description": "If set to true, attaches permissive CORS to the bucket. If set to an object, should have a single key 'CORSRules' with the value being a list of CORS rules"
+                    },
+                    "tags": {
+                        "type": "object",
+                        "description": "The tags to attach to this bucket"
+                    },
+                    "website_configuration": {
+                        "type": "object",
+                        "properties": {
+                            "index_document": {
+                                "type": "string",
+                                "default": "index.html",
+                                "description": "The path to the index document for your static website"
+                            },
+                            "error_document": {
+                                "type": "string",
+                                "default": "index.html",
+                                "description": "The path that handles 4XX class errors. Can be the same as the index_document"
+                            },
+                            "redirect_to": {
+                                "type": "string",
+                                "description": "If you want to redirect all requests, this is where S3 will redirect requests to. Otherwise do not provide"
+                            },
+                            "redirect_protocol": {
+                                "type": "string",
+                                "enum": ["http", "https"],
+                                "description": "If you want to redirect all requests, this is the protocol it redirects with"
+                            },
+                            "routing_rules": {
+                                "type": "object",
+                                "description": "See https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-page-redirect.html#advanced-conditional-redirects to see how to write advanced redirect rules"
+                            }
+                        }
+                    }
+                }
+            },
+            "props": {
+                "domain": {
+                    "type": "string",
+                    "description": "The full domain for the record"
+                },
+                "hosted_zone_id": {
+                    "type": "string",
+                    "description": "The ID of the hosted zone that this record lies in"
+                }
+            }
+        }
+    }
+}
