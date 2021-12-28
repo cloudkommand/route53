@@ -86,11 +86,11 @@ def manage_record_set(prev_state, cdef, op, domain):
     evaluate_health = cdef.get("evaluate_target_health") or False
 
     old_domain = prev_state.get("props", {}).get("domain") if op == "upsert" else domain
-    remove_set = None
+    remove_set, remove_zone = None, None
     if old_domain and ((old_domain != domain) or op == "delete"):
         remove_set, remove_zone = get_set(old_domain)
 
-    upsert_set = None
+    upsert_set, current_zone = None, None
     if op == "upsert":
         current_set, current_zone = get_set(domain)
         if api_hosted_zone_id and api_domain_name:
