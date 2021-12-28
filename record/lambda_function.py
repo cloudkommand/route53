@@ -79,7 +79,7 @@ def manage_record_set(prev_state, cdef, op, domain):
     multivalue_answer = cdef.get("multivalue_answer")
     ttl = cdef.get("ttl")
     resource_records = cdef.get("resource_records")
-    s3_region = cdef.get("target_s3_region")
+    s3_region = cdef.get("s3_region")
     cloudfront_domain_name = cdef.get("target_cloudfront_domain_name")
     api_hosted_zone_id = cdef.get("target_api_hosted_zone_id")
     api_domain_name = cdef.get("target_api_domain_name")
