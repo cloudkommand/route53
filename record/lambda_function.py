@@ -225,6 +225,7 @@ def get_set(domain):
     found_set = None
     old_zone = None
     hosted_zone_response = route53.list_hosted_zones()
+    print(f"hosted_zone_response = {hosted_zone_response}")
     for zone in hosted_zone_response.get("HostedZones"):
         if domain.endswith(zone['Name'][:-1]):
             old_zone = zone
