@@ -26,67 +26,92 @@
             "input": {
                 "type": "object",
                 "properties": {
-                    "name": {
+                    "domain": {
                         "type": "string",
-                        "description": "The name of the bucket. If not present auto-generation will be attempted."
+                        "description": "The domain (e.g. example.com, www.xbf.example.com) that this record is routing from"
                     },
-                    "s3_bucket": {
+                    "record_type": {
                         "type": "string",
-                        "description": "Whether to enable versioning on the bucket"
+                        "description": "The type of Route53 record to deploy",
+                        "default": "A",
+                        "enum": ["SOA", "A", "TXT", "NS", "CNAME", "MX", "NAPTR", "PTR", "SRV", "SPF", "AAAA", "CAA", "DS"]
                     },
-                    "base_domain": {
+                    "identifier": {
                         "type": "string",
-                        "description": "If true, puts the full public access block"
+                        "description": "Only pass this if you have multiple record sets that point to the same location and have the same type. If that is true, this value must be unique for each of those records"
                     },
-                    "public_access_block": {
-                        "type": "object",
-                        "properties": {
-                            "BlockPublicAcls": {"type": "boolean"},
-                            "IgnorePublicAcls": {"type": "boolean"},
-                            "BlockPublicPolicy": {"type": "boolean"},
-                            "RestrictPublicBuckets": {"type": "boolean"}
-                        },
-                        "description": "Set this to configure the public access block on an item-by-item level"
+                    "weight": {
+                        "type": "integer",
+                        "description": "Only necessary for record sets with a weighted routing policy. See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-weighted for details"
                     },
-                    "bucket_policy": {
-                        "type": "object",
-                        "description": "An inline IAM policy to attach to the S3 bucket. Your bucket should be in the Resource section of the policy"
+                    "region": {
+                        "type": "string",
+                        "description": "Only used for latency-based record sets. See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency for details"
                     },
-                    "CORS": {
-                        "type": ["boolean", "object"],
-                        "description": "If set to true, attaches permissive CORS to the bucket. If set to an object, should have a single key 'CORSRules' with the value being a list of CORS rules"
+                    "continent": {
+                        "type": "string",
+                        "enum": ["AF", "AN", "AS", "EU", "OC", "NA", "SA"],
+                        "description": "Use to route all queries from a continent to a particular endpoint"
                     },
-                    "tags": {
-                        "type": "object",
-                        "description": "The tags to attach to this bucket"
+                    "country": {
+                        "type": "string",
+                        "description": "Use to route all queries from a country to a particular endpoint"
                     },
-                    "website_configuration": {
-                        "type": "object",
-                        "properties": {
-                            "index_document": {
-                                "type": "string",
-                                "default": "index.html",
-                                "description": "The path to the index document for your static website"
+                    "state": {
+                        "type": "string",
+                        "description": "Used to route traffic on a US state-by-state basis. If using this parameter, country will be automatically set to \"US\""
+                    },
+                    "failover": {
+                        "type": "string",
+                        "enum": ["PRIMARY", "SECONDARY"],
+                        "description": "Used to route calls to a secondary endpoint if the primary endpoint fails its health check. Both records must have failover present"
+                    },
+                    "multivalue_answer": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-multivalue for details"
+                    },
+                    "ttl": {
+                        "type": "integer",
+                        "description": "The resource record cache time to live, in seconds. Not useable with Alias records (type 'A')"
+                    },
+                    "resource_records": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "Value": {
+                                    "type": "string",
+                                    "description": "The current or new DNS record value. Current in the case of a DELETE op."
+                                }
                             },
-                            "error_document": {
-                                "type": "string",
-                                "default": "index.html",
-                                "description": "The path that handles 4XX class errors. Can be the same as the index_document"
-                            },
-                            "redirect_to": {
-                                "type": "string",
-                                "description": "If you want to redirect all requests, this is where S3 will redirect requests to. Otherwise do not provide"
-                            },
-                            "redirect_protocol": {
-                                "type": "string",
-                                "enum": ["http", "https"],
-                                "description": "If you want to redirect all requests, this is the protocol it redirects with"
-                            },
-                            "routing_rules": {
-                                "type": "object",
-                                "description": "See https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-page-redirect.html#advanced-conditional-redirects to see how to write advanced redirect rules"
-                            }
+                            "required": ["Value"]
                         }
+                    },
+                    "alias_target_type": {
+                        "type": "string",
+                        "enum": ["cloudfront", "s3", "api-regional", "api-edge"],
+                        "description": "The type of service that this alias record is targeting"
+                    },
+                    "target_s3_region": {
+                        "type": "string",
+                        "description": "The region that the static website bucket was created in. Defaults to the region the lambda is deployed in"
+                    },
+                    "target_cloudfront_domain_name": {
+                        "type": "string",
+                        "description": "The domain name Cloudfront assigned when you created the distribution that this record is going to point to"
+                    },
+                    "target_api_hosted_zone_id": {
+                        "type": "string",
+                        "description": "The hosted zone ID for the API this record is pointing to"
+                    },
+                    "target_api_domain_name": {
+                        "type": "string",
+                        "description": "The domain name for the API this record is pointing to"
+                    },
+                    "evaluate_target_health": {
+                        "type": "boolean",
+                        "description": "When set to true, this alias record set inherits the health of the referenced AWS resource"
                     }
                 }
             },
