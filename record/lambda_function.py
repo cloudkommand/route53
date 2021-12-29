@@ -135,7 +135,7 @@ def manage_record_set(prev_state, cdef, op, domain):
         else:
             eh.add_log("No Records to Write", {"current_set": current_set})
             eh.add_props({"domain": domain, "hosted_zone_id": current_zone['Id']})
-            eh.add_links({"Route 53 Record": gen_route53_link(current_zone['Id'])})
+            eh.add_links({"Record Set": gen_route53_link(current_zone['Id'])})
 
     if remove_set or upsert_set:
         eh.add_op("update_record_set", {
@@ -185,7 +185,7 @@ def update_record_set(domain):
         eh.add_op("check_update_complete", [change_id])
 
     eh.add_props({"domain": domain, "hosted_zone_id": zone_1_id})
-    eh.add_links({"Route 53 Record": gen_route53_link(zone_1_id)})
+    eh.add_links({"Record Set": gen_route53_link(zone_1_id)})
 
 
 @ext(handler=eh, op="check_update_complete")
