@@ -40,7 +40,7 @@ def lambda_handler(event, context):
         project_code = event.get("project_code")
         repo_id = event.get("repo_id")
         domain = cdef.get("domain") or \
-            form_domain(cdef.get("s3_bucket"), cdef.get("base_domain")) or \
+            form_domain(cdef.get("target_s3_bucket"), cdef.get("base_domain")) or \
             form_domain(component_safe_name(project_code, repo_id, cname, no_underscores=True), cdef.get("base_domain"))
 
         pass_back_data = event.get("pass_back_data", {})
@@ -79,7 +79,7 @@ def manage_record_set(prev_state, cdef, op, domain):
     multivalue_answer = cdef.get("multivalue_answer")
     ttl = cdef.get("ttl")
     resource_records = cdef.get("resource_records")
-    s3_region = cdef.get("s3_region")
+    s3_region = cdef.get("target_s3_region")
     cloudfront_domain_name = cdef.get("target_cloudfront_domain_name")
     api_hosted_zone_id = cdef.get("target_api_hosted_zone_id")
     api_domain_name = cdef.get("target_api_domain_name")
@@ -135,6 +135,7 @@ def manage_record_set(prev_state, cdef, op, domain):
         else:
             eh.add_log("No Records to Write", {"current_set": current_set})
             eh.add_props({"domain": domain, "hosted_zone_id": current_zone['Id']})
+            eh.add_links({"Route 53 Record": gen_route53_link(current_zone['Id'])})
 
     if remove_set or upsert_set:
         eh.add_op("update_record_set", {
@@ -184,6 +185,7 @@ def update_record_set(domain):
         eh.add_op("check_update_complete", [change_id])
 
     eh.add_props({"domain": domain, "hosted_zone_id": zone_1_id})
+    eh.add_links({"Route 53 Record": gen_route53_link(zone_1_id)})
 
 
 @ext(handler=eh, op="check_update_complete")
@@ -263,6 +265,9 @@ def get_set(domain):
         eh.add_log("No Matching Record", {"domain": domain})
     
     return found_set, old_zone
+
+def gen_route53_link(hosted_zone_id):
+    return f"https://console.aws.amazon.com/route53/v2/hostedzones#ListRecordSets/{hosted_zone_id}"
 
 def form_domain(bucket, base_domain):
     if bucket and base_domain:
