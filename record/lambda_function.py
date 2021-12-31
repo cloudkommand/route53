@@ -39,9 +39,9 @@ def lambda_handler(event, context):
         cname = event.get("component_name")
         project_code = event.get("project_code")
         repo_id = event.get("repo_id")
-        domain = cdef.get("domain") or \
-            form_domain(cdef.get("target_s3_bucket"), cdef.get("base_domain")) or \
-            form_domain(component_safe_name(project_code, repo_id, cname, no_underscores=True), cdef.get("base_domain"))
+        domain = cdef.get("domain") or cdef.get("target_s3_bucket") or \
+            form_domain(component_safe_name(project_code, repo_id, cname, no_underscores=False), cdef.get("base_domain"))
+            # form_domain(, cdef.get("base_domain")) or \
 
         pass_back_data = event.get("pass_back_data", {})
         if not pass_back_data:
