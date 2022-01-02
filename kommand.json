@@ -97,6 +97,10 @@
                         "type": "string",
                         "description": "The region that the static website bucket was created in. Defaults to the region the lambda is deployed in"
                     },
+                    "target_s3_bucket": {
+                        "type": "string",
+                        "description": "The name of both the bucket to point to and the domain. Used to let the extension know to point to S3"
+                    },
                     "target_cloudfront_domain_name": {
                         "type": "string",
                         "description": "The domain name Cloudfront assigned when you created the distribution that this record is going to point to"
