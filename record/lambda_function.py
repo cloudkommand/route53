@@ -136,7 +136,6 @@ def manage_record_set(prev_state, cdef, op, domain):
             eh.add_log("No Records to Write", {"current_set": current_set})
             eh.add_props({"domain": domain, "hosted_zone_id": current_zone['Id']})
             eh.add_links({"Record Set": gen_route53_link(current_zone['Id'])})
-            return 0
 
     if remove_set or upsert_set:
         eh.add_op("update_record_set", {
@@ -261,6 +260,8 @@ def get_set(domain):
                 break
     if found_set:
         found_set['Name'] = found_set['Name'][:-1]
+        if found_set.get("AliasTarget").get("DNSName"):
+            found_set['AliasTarget']['DNSName'] = found_set['AliasTarget']['DNSName'][:-1]
         eh.add_log("Found Matching Record", {"set": found_set, "domain": domain})
     else:
         eh.add_log("No Matching Record", {"domain": domain})
