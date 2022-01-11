@@ -136,6 +136,7 @@ def manage_record_set(prev_state, cdef, op, domain):
             eh.add_log("No Records to Write", {"current_set": current_set})
             eh.add_props({"domain": domain, "hosted_zone_id": current_zone['Id']})
             eh.add_links({"Record Set": gen_route53_link(current_zone['Id'])})
+            return 0
 
     if remove_set or upsert_set:
         eh.add_op("update_record_set", {
