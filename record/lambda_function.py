@@ -43,12 +43,14 @@ def lambda_handler(event, context):
             form_domain(component_safe_name(project_code, repo_id, cname, no_underscores=False), cdef.get("base_domain"))
             # form_domain(, cdef.get("base_domain")) or \
 
+        record_type = cdef.get("record_type") or "A"
+
         pass_back_data = event.get("pass_back_data", {})
         if not pass_back_data:
             eh.add_op("manage_record_set")
 
-        manage_record_set(prev_state, cdef, event.get("op"), domain)
-        update_record_set(domain)
+        manage_record_set(prev_state, cdef, event.get("op"), domain, record_type)
+        update_record_set(domain, record_type)
         check_update_complete()
         
         return eh.finish()
@@ -62,9 +64,8 @@ def lambda_handler(event, context):
 
 
 @ext(handler=eh, op="manage_record_set")
-def manage_record_set(prev_state, cdef, op, domain):
+def manage_record_set(prev_state, cdef, op, domain, record_type):
     # route53 = boto3.client("route53")
-    record_type = cdef.get("record_type") or "A"
     if not domain:
         eh.perm_error("No Domain")
         eh.add_log("No Domain or S3 Bucket", {"component_definition": cdef}, True)
@@ -88,11 +89,11 @@ def manage_record_set(prev_state, cdef, op, domain):
     old_domain = prev_state.get("props", {}).get("domain") if op == "upsert" else domain
     remove_set, remove_zone = None, None
     if old_domain and ((old_domain != domain) or op == "delete"):
-        remove_set, remove_zone = get_set(old_domain)
+        remove_set, remove_zone = get_set(old_domain, record_type)
 
     upsert_set, current_zone = None, None
     if op == "upsert":
-        current_set, current_zone = get_set(domain)
+        current_set, current_zone = get_set(domain, record_type)
         if api_hosted_zone_id and api_domain_name:
             hosted_zone_id = api_hosted_zone_id
             domain_name = api_domain_name
@@ -134,8 +135,11 @@ def manage_record_set(prev_state, cdef, op, domain):
             upsert_set = desired_set
         else:
             eh.add_log("No Records to Write", {"current_set": current_set})
-            eh.add_props({"domain": domain, "hosted_zone_id": current_zone['Id']})
-            eh.add_links({"Record Set": gen_route53_link(current_zone['Id'])})
+            eh.add_props({"domain": domain, "hosted_zone_id": current_zone['Id'], "record_type": record_type})
+            eh.add_links({
+                "Record Set": gen_route53_link(current_zone['Id']),
+                "Domain URL": f"https://{domain}"
+            })
 
     if remove_set or upsert_set:
         eh.add_op("update_record_set", {
@@ -145,7 +149,7 @@ def manage_record_set(prev_state, cdef, op, domain):
 
 
 @ext(handler=eh, op="update_record_set")
-def update_record_set(domain):
+def update_record_set(domain, record_type):
     remove = eh.ops['update_record_set'].get("remove")
     upsert = eh.ops['update_record_set'].get("upsert")
 
@@ -184,8 +188,11 @@ def update_record_set(domain):
         change_id = run_update(params)
         eh.add_op("check_update_complete", [change_id])
 
-    eh.add_props({"domain": domain, "hosted_zone_id": zone_1_id})
-    eh.add_links({"Record Set": gen_route53_link(zone_1_id)})
+    eh.add_props({"domain": domain, "hosted_zone_id": zone_1_id, "record_type": record_type})
+    eh.add_links({
+        "Record Set": gen_route53_link(zone_1_id),
+        "Domain URL": f"https://{domain}"
+    })
 
 
 @ext(handler=eh, op="check_update_complete")
@@ -225,7 +232,7 @@ def gen_params(zone_id, set_):
             }
         }
 
-def get_set(domain):
+def get_set(domain, record_type):
     # route53 = boto3.client("route53")
     found_set = None
     old_zone = None
@@ -255,7 +262,7 @@ def get_set(domain):
             )
         print(f"Record Set Response {response}")
         for record_set in response.get("ResourceRecordSets"):
-            if record_set.get("Name")[:-1] == domain:
+            if record_set.get("Name")[:-1] == domain and record_set.get("Type") == record_type:
                 found_set = record_set
                 break
     if found_set:
