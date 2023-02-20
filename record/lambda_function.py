@@ -30,6 +30,18 @@ def gen_s3_dns_value(region):
         return f"s3-website.{region}.amazonaws.com"
 
 def lambda_handler(event, context):
+    """This function will deploy a route53 record set for a given domain name
+
+       It will auto-generate a domain name if you pass it a "base_domain". Use this to keep projects
+       separated
+
+       If you do not specify a hosted zone ID, it will choose the first one that matches
+       the domain name and is public.
+       
+       If you specify a hosted zone ID, it will use that one.
+
+       If you change the hosted zone ID, it will fail.
+    """
     try:
         print(f"event = {event}")
         eh.capture_event(event)
@@ -51,7 +63,6 @@ def lambda_handler(event, context):
 
         hosted_zone_id = prior_route53_hosted_zone_id or route53_hosted_zone_id
 
-        #Should store in props
         record_type = cdef.get("record_type") or "A"
 
         pass_back_data = event.get("pass_back_data", {})
