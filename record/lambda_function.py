@@ -290,13 +290,13 @@ def update_record_set(domain, record_type):
     if upsert:
         changes.append({
             "Action": "UPSERT",
-            "ResourceRecordSet": upsert.get("set")
+            "ResourceRecordSet": upsert
         })
 
     if remove:
         changes.append({
             "Action": "DELETE",
-            "ResourceRecordSet": remove.get("set")
+            "ResourceRecordSet": remove
         })
 
     params = {
