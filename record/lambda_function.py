@@ -218,7 +218,7 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
         print(f"current_set = {current_set}")
         print(f"desired_set = {desired_set}")
         if current_set != desired_set:
-            update_record_set_op_val = {"upsert": current_set}
+            update_record_set_op_val = {"upsert": desired_set}
         
         old_domain = prev_state.get("props", {}).get("domain")
         if old_domain and old_domain != domain:
