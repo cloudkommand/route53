@@ -55,7 +55,7 @@ def lambda_handler(event, context):
             form_domain(component_safe_name(project_code, repo_id, cname, no_underscores=False), cdef.get("base_domain"))
             # form_domain(, cdef.get("base_domain")) or \
         route53_hosted_zone_id = cdef.get("route53_hosted_zone_id")
-        prior_route53_hosted_zone_id = prev_state.get("props", {}).get("hosted_zone_id")
+        prior_route53_hosted_zone_id = prev_state.get("props", {}).get("route53_hosted_zone_id")
         if prior_route53_hosted_zone_id and route53_hosted_zone_id and (prior_route53_hosted_zone_id != route53_hosted_zone_id):
             eh.add_log("Cannot Change Hosted Zone ID", {"prior": prior_route53_hosted_zone_id, "new": route53_hosted_zone_id}, is_error=True)
             eh.perm_error("Cannot Change Hosted Zone ID", 0)
@@ -94,7 +94,7 @@ def get_hosted_zone(hosted_zone_id, domain, record_type):
         try:
             old_zone = route53.get_hosted_zone(Id=hosted_zone_id).get("HostedZone")
             eh.add_log("Found Hosted Zone", {"response": old_zone})
-            eh.add_props({"hosted_zone_id": hosted_zone_id})
+            eh.add_props({"route53_hosted_zone_id": hosted_zone_id})
             # eh.add_op("get_record_set", {"zone": old_zone.get("HostedZone"), "domain": domain, "record_type": record_type})
 
         except ClientError as e:
@@ -139,10 +139,10 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
     #     eh.add_log("No Domain or S3 Bucket", {"component_definition": cdef}, True)
     #     return 0
 
-    hosted_zone_id = eh.props["hosted_zone_id"]
+    route53_hosted_zone_id = eh.props["route53_hosted_zone_id"]
 
     response = route53.list_resource_record_sets(
-        HostedZoneId=hosted_zone_id,
+        HostedZoneId=route53_hosted_zone_id,
         StartRecordName=domain
     )
     current_set = None
@@ -215,6 +215,10 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             }) or None
         })
 
+        eh.add_props({
+            "hosted_zone_id": hosted_zone_id
+        })
+
         print(f"current_set = {current_set}")
         print(f"desired_set = {desired_set}")
         if current_set != desired_set:
@@ -274,7 +278,7 @@ def update_record_set(domain, record_type):
     remove = eh.ops['update_record_set'].get("remove")
     upsert = eh.ops['update_record_set'].get("upsert")
 
-    zone_id = eh.props.get("hosted_zone_id")
+    route53_hosted_zone_id = eh.props.get("route53_hosted_zone_id")
 
     # zone_1_id = upsert.get("zone", {}).get('Id')
     # zone_2_id = remove.get("zone", {}).get('Id')
@@ -300,7 +304,7 @@ def update_record_set(domain, record_type):
         })
 
     params = {
-        "HostedZoneId": zone_id,
+        "HostedZoneId": route53_hosted_zone_id,
         "ChangeBatch": {
             "Comment":  "Change Made By CloudKommand",
             "Changes": changes
@@ -316,9 +320,9 @@ def update_record_set(domain, record_type):
     # change_id = run_update(params)
     eh.add_op("check_update_complete", [change_id])
 
-    eh.add_props({"domain": domain, "hosted_zone_id": zone_id, "record_type": record_type})
+    eh.add_props({"domain": domain, "record_type": record_type})
     eh.add_links({
-        "Record Set": gen_route53_link(zone_id),
+        "Record Set": gen_route53_link(route53_hosted_zone_id),
         "Domain URL": f"https://{domain}"
     })
 
