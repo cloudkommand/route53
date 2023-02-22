@@ -127,7 +127,7 @@ def get_hosted_zone(hosted_zone_id, domain, record_type):
             eh.add_log("No Hosted Zone Found", {"response": hosted_zone_response, "domain": domain})
             eh.perm_error("No Hosted Zone Found")
         else:
-            eh.add_props({"hosted_zone_id": old_zone.get("Id")})
+            eh.add_props({"route53_hosted_zone_id": old_zone.get("Id")})
 
 
 
