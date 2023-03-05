@@ -188,7 +188,7 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             domain_name = cloudfront_domain_name
         elif s3_region:
             hosted_zone_id = S3_MAPPING_DICT[s3_region]
-            domain_name = f's3-website-{s3_region}.amazonaws.com.'
+            domain_name = f's3-website-{s3_region}.amazonaws.com'
         else:
             eh.add_log("No API, Cloudfront, or S3 Data", {"definition": cdef}, is_error=True)
             eh.perm_error("No API, Cloudfront, or S3 Data", 0)
@@ -219,12 +219,13 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             "hosted_zone_id": hosted_zone_id
         })
 
-        if s3_region and current_set and current_set.get("DNSName"):
-            current_set['DNSName'] = current_set['DNSName'][:-1]
         print(f"current_set = {current_set}")
         print(f"desired_set = {desired_set}")
         if current_set != desired_set:
             update_record_set_op_val = {"upsert": desired_set}
+
+        if desired_set and s3_region:
+            desired_set["AliasTarget"]["DNSName"] += "."  # add trailing dot to domain name
         
         old_domain = prev_state.get("props", {}).get("domain")
         if old_domain and old_domain != domain:
