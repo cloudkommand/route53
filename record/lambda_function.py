@@ -94,7 +94,7 @@ def get_hosted_zone(hosted_zone_id, domain, record_type):
         try:
             old_zone = route53.get_hosted_zone(Id=hosted_zone_id).get("HostedZone")
             eh.add_log("Found Hosted Zone", {"response": old_zone})
-            eh.add_props({"route53_hosted_zone_id": hosted_zone_id})
+            eh.add_props({"route53_hosted_zone_id": old_zone["Id"]})
             # eh.add_op("get_record_set", {"zone": old_zone.get("HostedZone"), "domain": domain, "record_type": record_type})
 
         except ClientError as e:
