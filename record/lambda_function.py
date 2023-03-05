@@ -219,6 +219,8 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             "hosted_zone_id": hosted_zone_id
         })
 
+        if s3_region and current_set and current_set.get("DNSName"):
+            current_set['DNSName'] = current_set['DNSName'][:-1]
         print(f"current_set = {current_set}")
         print(f"desired_set = {desired_set}")
         if current_set != desired_set:
