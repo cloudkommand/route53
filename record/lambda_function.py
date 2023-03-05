@@ -75,7 +75,7 @@ def lambda_handler(event, context):
 
         get_hosted_zone(hosted_zone_id, domain, record_type)
         get_record_set(prev_state, cdef, event.get("op"), domain, record_type)
-        update_record_set(domain, record_type)
+        update_record_set(domain, record_type, cdef.get("target_s3_region"))
         check_update_complete()
         
         return eh.finish()
@@ -256,28 +256,8 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
                 "Domain URL": f"https://{domain}"
             })
 
-    # old_domain = prev_state.get("props", {}).get("domain") if op == "upsert" else domain
-    # remove_set, remove_zone = None, None
-    # if old_domain and ((old_domain != domain) or op == "delete"):
-    #     remove_set, remove_zone = get_set(old_domain, record_type)
-
-    # upsert_set, current_zone = None, None
-    # if op == "upsert":
-    #     current_set, current_zone = get_set(domain, record_type)
-        
-    #     else:
-    #         eh.add_log("No Records to Write", {"current_set": current_set})
-            
-
-    # if remove_set or upsert_set:
-    #     eh.add_op("update_record_set", {
-    #         "remove": remove_none_attributes({"set": remove_set, "zone": remove_zone}), 
-    #         "upsert": remove_none_attributes({"set": upsert_set, "zone": current_zone})
-    #         })
-
-
 @ext(handler=eh, op="update_record_set")
-def update_record_set(domain, record_type):
+def update_record_set(domain, record_type, only_to_s3):
     remove = eh.ops['update_record_set'].get("remove")
     upsert = eh.ops['update_record_set'].get("upsert")
 
@@ -326,7 +306,7 @@ def update_record_set(domain, record_type):
     eh.add_props({"domain": domain, "record_type": record_type})
     eh.add_links({
         "Record Set": gen_route53_link(route53_hosted_zone_id),
-        "Domain URL": f"https://{domain}"
+        "Domain URL": f"http://{domain}" if only_to_s3 else f"https://{domain}"
     })
 
 
@@ -355,8 +335,6 @@ def run_update(params):
         return response.get("ChangeInfo")['Id']
     except ClientError as e:
         handle_common_errors(e, eh, "Failed to Update Record", 60, ["NoSuchHostedZone", "NoSuchHealthCheck", "InvalidChangeBatch", "InvalidInput"])
-
-    
 
 def gen_params(zone_id, set_):
     return {
