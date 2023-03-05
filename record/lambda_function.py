@@ -229,7 +229,7 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             old_record_type = prev_state.get("props", {}).get("record_type")
             old_set = None
             response = route53.list_resource_record_sets(
-                HostedZoneId=hosted_zone_id,
+                HostedZoneId=route53_hosted_zone_id,
                 StartRecordName=old_domain
             )
 
