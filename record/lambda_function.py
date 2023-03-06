@@ -75,7 +75,7 @@ def lambda_handler(event, context):
 
         get_hosted_zone(hosted_zone_id, domain, record_type)
         get_record_set(prev_state, cdef, event.get("op"), domain, record_type)
-        update_record_set(domain, record_type)
+        update_record_set(domain, record_type, cdef.get("target_s3_region"))
         check_update_complete()
         
         return eh.finish()
@@ -94,7 +94,7 @@ def get_hosted_zone(hosted_zone_id, domain, record_type):
         try:
             old_zone = route53.get_hosted_zone(Id=hosted_zone_id).get("HostedZone")
             eh.add_log("Found Hosted Zone", {"response": old_zone})
-            eh.add_props({"route53_hosted_zone_id": hosted_zone_id})
+            eh.add_props({"route53_hosted_zone_id": old_zone["Id"]})
             # eh.add_op("get_record_set", {"zone": old_zone.get("HostedZone"), "domain": domain, "record_type": record_type})
 
         except ClientError as e:
@@ -188,7 +188,7 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             domain_name = cloudfront_domain_name
         elif s3_region:
             hosted_zone_id = S3_MAPPING_DICT[s3_region]
-            domain_name = f's3-website-{s3_region}.amazonaws.com.'
+            domain_name = f's3-website-{s3_region}.amazonaws.com'
         else:
             eh.add_log("No API, Cloudfront, or S3 Data", {"definition": cdef}, is_error=True)
             eh.perm_error("No API, Cloudfront, or S3 Data", 0)
@@ -223,13 +223,16 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
         print(f"desired_set = {desired_set}")
         if current_set != desired_set:
             update_record_set_op_val = {"upsert": desired_set}
+
+        if desired_set and s3_region:
+            desired_set["AliasTarget"]["DNSName"] += "."  # add trailing dot to domain name
         
         old_domain = prev_state.get("props", {}).get("domain")
         if old_domain and old_domain != domain:
             old_record_type = prev_state.get("props", {}).get("record_type")
             old_set = None
             response = route53.list_resource_record_sets(
-                HostedZoneId=hosted_zone_id,
+                HostedZoneId=route53_hosted_zone_id,
                 StartRecordName=old_domain
             )
 
@@ -253,28 +256,8 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
                 "Domain URL": f"https://{domain}"
             })
 
-    # old_domain = prev_state.get("props", {}).get("domain") if op == "upsert" else domain
-    # remove_set, remove_zone = None, None
-    # if old_domain and ((old_domain != domain) or op == "delete"):
-    #     remove_set, remove_zone = get_set(old_domain, record_type)
-
-    # upsert_set, current_zone = None, None
-    # if op == "upsert":
-    #     current_set, current_zone = get_set(domain, record_type)
-        
-    #     else:
-    #         eh.add_log("No Records to Write", {"current_set": current_set})
-            
-
-    # if remove_set or upsert_set:
-    #     eh.add_op("update_record_set", {
-    #         "remove": remove_none_attributes({"set": remove_set, "zone": remove_zone}), 
-    #         "upsert": remove_none_attributes({"set": upsert_set, "zone": current_zone})
-    #         })
-
-
 @ext(handler=eh, op="update_record_set")
-def update_record_set(domain, record_type):
+def update_record_set(domain, record_type, only_to_s3):
     remove = eh.ops['update_record_set'].get("remove")
     upsert = eh.ops['update_record_set'].get("upsert")
 
@@ -323,7 +306,7 @@ def update_record_set(domain, record_type):
     eh.add_props({"domain": domain, "record_type": record_type})
     eh.add_links({
         "Record Set": gen_route53_link(route53_hosted_zone_id),
-        "Domain URL": f"https://{domain}"
+        "Domain URL": f"http://{domain}" if only_to_s3 else f"https://{domain}"
     })
 
 
@@ -352,8 +335,6 @@ def run_update(params):
         return response.get("ChangeInfo")['Id']
     except ClientError as e:
         handle_common_errors(e, eh, "Failed to Update Record", 60, ["NoSuchHostedZone", "NoSuchHealthCheck", "InvalidChangeBatch", "InvalidInput"])
-
-    
 
 def gen_params(zone_id, set_):
     return {

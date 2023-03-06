@@ -14,7 +14,6 @@
                     "Sid": "Vis",
                     "Effect": "Allow",
                     "Action": [
-                        "iam:PassRole",
                         "route53:ChangeResourceRecordSets",
                         "route53:GetChange",
                         "route53:GetHostedZone",
