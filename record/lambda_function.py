@@ -56,7 +56,7 @@ def lambda_handler(event, context):
             # form_domain(, cdef.get("base_domain")) or \
         route53_hosted_zone_id = cdef.get("route53_hosted_zone_id")
         prior_route53_hosted_zone_id = prev_state.get("props", {}).get("route53_hosted_zone_id")
-        if prior_route53_hosted_zone_id and route53_hosted_zone_id and (prior_route53_hosted_zone_id != route53_hosted_zone_id):
+        if prior_route53_hosted_zone_id and route53_hosted_zone_id and (prior_route53_hosted_zone_id.split("/")[-1] != route53_hosted_zone_id):
             eh.add_log("Cannot Change Hosted Zone ID", {"prior": prior_route53_hosted_zone_id, "new": route53_hosted_zone_id}, is_error=True)
             eh.perm_error("Cannot Change Hosted Zone ID", 0)
             return eh.finish()
