@@ -3,8 +3,9 @@
         "record": {
             "type": "ext",
             "displayname": "CK Route53 Record",
-            "description": "Builds and deploys a single-page React application using S3 and (if specified) Route53",
+            "description": "Creates a Route53 record set, which routes traffic to an endpoint either in S3, Cloudfront, or API Gateway.",
             "cloud": "AWS",
+            "ck_plugin_tier": 3,
             "resources": [
                 "AWS::route53::recordset"
             ],
@@ -29,13 +30,25 @@
                 "properties": {
                     "domain": {
                         "type": "string",
-                        "description": "The domain (e.g. example.com, www.xbf.example.com) that this record is routing from"
+                        "description": "The domain (e.g. example.com, www.xbf.example.com) that this record is routing from",
+                        "common": true
+                    },
+                    "base_domain": {
+                        "type": "string",
+                        "description": "Pass a base domain to get a unique domain through a generated subdomain. Set this value if you want multiple developers working on the same app to get a unique domain per CloudKommand project.",
+                        "common": true
                     },
                     "record_type": {
                         "type": "string",
                         "description": "The type of Route53 record to deploy",
                         "default": "A",
-                        "enum": ["SOA", "A", "TXT", "NS", "CNAME", "MX", "NAPTR", "PTR", "SRV", "SPF", "AAAA", "CAA", "DS"]
+                        "enum": ["SOA", "A", "TXT", "NS", "CNAME", "MX", "NAPTR", "PTR", "SRV", "SPF", "AAAA", "CAA", "DS"],
+                        "common": true
+                    },
+                    "route53_hosted_zone_id": {
+                        "type": "string",
+                        "description": "The ID of the hosted zone to create the record in. If not passed, the extension will attempt to find the zone based on the domain passed",
+                        "common": true
                     },
                     "identifier": {
                         "type": "string",
@@ -89,47 +102,88 @@
                             "required": ["Value"]
                         }
                     },
-                    "alias_target_type": {
-                        "type": "string",
-                        "enum": ["cloudfront", "s3", "api-regional", "api-edge"],
-                        "description": "The type of service that this alias record is targeting"
-                    },
                     "target_s3_region": {
                         "type": "string",
-                        "description": "The region that the static website bucket was created in. Defaults to the region the lambda is deployed in"
+                        "description": "The region that the bucket to route traffic to was created in. Defaults to the region the lambda is deployed in",
+                        "common": true
                     },
                     "target_s3_bucket": {
                         "type": "string",
-                        "description": "The name of both the bucket to point to and the domain. Used to let the extension know to point to S3"
+                        "description": "The name of both the bucket to point to and the domain. Used to let the extension know to point to S3",
+                        "common": true
                     },
                     "target_cloudfront_domain_name": {
                         "type": "string",
-                        "description": "The domain name Cloudfront assigned when you created the distribution that this record is going to point to"
+                        "description": "The domain name Cloudfront assigned when you created the distribution that this record is going to point to",
+                        "common": true
                     },
                     "target_api_hosted_zone_id": {
                         "type": "string",
-                        "description": "The hosted zone ID for the API this record is pointing to"
+                        "description": "The hosted zone ID for the API this record is pointing to",
+                        "common": true
                     },
                     "target_api_domain_name": {
                         "type": "string",
-                        "description": "The domain name for the API this record is pointing to"
+                        "description": "The domain name for the API this record is pointing to",
+                        "common": true
                     },
                     "evaluate_target_health": {
                         "type": "boolean",
-                        "description": "When set to true, this alias record set inherits the health of the referenced AWS resource"
+                        "description": "When set to true, this alias record set inherits the health of the referenced AWS resource",
+                        "default": false
                     }
                 }
             },
             "props": {
                 "domain": {
                     "type": "string",
-                    "description": "The full domain for the record"
+                    "description": "The full domain for the record."
                 },
                 "hosted_zone_id": {
                     "type": "string",
-                    "description": "The ID of the hosted zone that this record lies in"
+                    "description": "The ID of the hosted zone of the alias target."
+                },
+                "record_type": {
+                    "type": "string",
+                    "description": "The type of Route53 record to deploy."
+                },
+                "route53_hosted_zone_id": {
+                    "type": "string",
+                    "description": "The ID of the hosted zone that this record lies in."
                 }
-            }
+            },
+            "examples": [
+                {
+                    "displayname": "S3 Bucket Record from Base Domain",
+                    "notes": "This example will create a alias record that points to an S3 bucket component named 'bucket'. The record will be a subdomain of the base domain you pass in.",
+                    "definition": {
+                        "type": "$route53.record",
+                        "base_domain": "example.com",
+                        "target_s3_bucket": "$bucket:props.name",
+                        "target_s3_region": "$bucket:props.region"
+                    }
+                }, 
+                {
+                    "displayname": "API Gateway Record with Specified Zone",
+                    "notes": "Passing in the hosted zone ID allows you to specify the zone you want the record created in, which is especially useful if you are using private hosted zones. This example will create a record that points to an API Gateway endpoint, where the API custom domain already exists.",
+                    "definition": {
+                        "type": "$route53.record",
+                        "domain": "api.example.com",
+                        "target_api_hosted_zone_id": "Z2FDTNDATAQYW2",
+                        "target_api_domain_name": "api.example.com",
+                        "route53_hosted_zone_id": "Z2FDTNDATAQYW3"
+                    }
+                },
+                {
+                    "displayname": "Cloudfront Record",
+                    "notes": "Simple example for routing to an existing cloudfront component.",
+                    "definition": {
+                        "type": "$route53.record",
+                        "domain": "some.domain.com",
+                        "target_cloudfront_domain_name": "$dist:props.domain_name"
+                    }
+                }
+            ]
         }
     }
 }
