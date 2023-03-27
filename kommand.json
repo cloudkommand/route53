@@ -157,17 +157,17 @@
                     "displayname": "S3 Bucket Record from Base Domain",
                     "notes": "This example will create a alias record that points to an S3 bucket component named 'bucket'. The record will be a subdomain of the base domain you pass in.",
                     "definition": {
-                        "type": "$route53.record",
+                        "type": "&route53.record",
                         "base_domain": "example.com",
-                        "target_s3_bucket": "$bucket:props.name",
-                        "target_s3_region": "$bucket:props.region"
+                        "target_s3_bucket": "&bucket:props.name",
+                        "target_s3_region": "&bucket:props.region"
                     }
                 }, 
                 {
                     "displayname": "API Gateway Record with Specified Zone",
                     "notes": "Passing in the hosted zone ID allows you to specify the zone you want the record created in, which is especially useful if you are using private hosted zones. This example will create a record that points to an API Gateway endpoint, where the API custom domain already exists.",
                     "definition": {
-                        "type": "$route53.record",
+                        "type": "&route53.record",
                         "domain": "api.example.com",
                         "target_api_hosted_zone_id": "Z2FDTNDATAQYW2",
                         "target_api_domain_name": "api.example.com",
@@ -178,9 +178,9 @@
                     "displayname": "Cloudfront Record",
                     "notes": "Simple example for routing to an existing cloudfront component.",
                     "definition": {
-                        "type": "$route53.record",
+                        "type": "&route53.record",
                         "domain": "some.domain.com",
-                        "target_cloudfront_domain_name": "$dist:props.domain_name"
+                        "target_cloudfront_domain_name": "&dist:props.domain_name"
                     }
                 }
             ]
