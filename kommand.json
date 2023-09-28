@@ -127,6 +127,16 @@
                         "description": "The domain name for the API this record is pointing to",
                         "common": true
                     },
+                    "target_hosted_zone_id": {
+                        "type": "string",
+                        "description": "The hosted zone ID for the target. Refer to https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/route53/client/change_resource_record_sets.html if you are not using an API Gateway, Cloudfront, or S3",
+                        "common": true
+                    },
+                    "target_dns_name": {
+                        "type": "string",
+                        "description": "The DNS name for the target. Refer to https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/route53/client/change_resource_record_sets.html if you are not using an API Gateway, Cloudfront, or S3",
+                        "common": true
+                    },
                     "evaluate_target_health": {
                         "type": "boolean",
                         "description": "When set to true, this alias record set inherits the health of the referenced AWS resource",
