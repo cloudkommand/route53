@@ -175,14 +175,13 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
         resource_records = cdef.get("resource_records")
         s3_region = cdef.get("target_s3_region")
         cloudfront_domain_name = cdef.get("target_cloudfront_domain_name")
-        api_hosted_zone_id = cdef.get("target_api_hosted_zone_id")
-        api_domain_name = cdef.get("target_api_domain_name")
+        hosted_zone_id = cdef.get("target_api_hosted_zone_id") or cdef.get("target_hosted_zone_id")
+        domain_name = cdef.get("target_api_domain_name") or cdef.get("target_dns_name")
         evaluate_health = cdef.get("evaluate_target_health") or False
 
         update_record_set_op_val = {}
-        if api_hosted_zone_id and api_domain_name:
-            hosted_zone_id = api_hosted_zone_id
-            domain_name = api_domain_name
+        if hosted_zone_id and domain_name:
+            pass
         elif cloudfront_domain_name:
             hosted_zone_id = "Z2FDTNDATAQYW2"
             domain_name = cloudfront_domain_name
@@ -190,8 +189,8 @@ def get_record_set(prev_state, cdef, op, domain, record_type):
             hosted_zone_id = S3_MAPPING_DICT[s3_region]
             domain_name = f's3-website-{s3_region}.amazonaws.com'
         else:
-            eh.add_log("No API, Cloudfront, or S3 Data", {"definition": cdef}, is_error=True)
-            eh.perm_error("No API, Cloudfront, or S3 Data", 0)
+            eh.add_log("Not Enough Hosted Zone Data", {"definition": cdef}, is_error=True)
+            eh.perm_error("Not Enough Hosted Zone Data", 0)
             return 0
         desired_set = remove_none_attributes({
             "Name": domain,
